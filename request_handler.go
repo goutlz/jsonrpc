@@ -46,7 +46,7 @@ func createJsonRpcHandler(handler RouteHandler) func(w http.ResponseWriter, r *h
 			jsonRpcErr, ok := rVal.(ServerError)
 			if !ok {
 				errResponse.Err = &Error{
-					Code:    MakeModuleErrorCode(jsonrpc_module_code, 0),
+					Code:    makeModuleErrorCode(jsonrpc_module_code, 0),
 					Message: "Unknown error",
 					Data:    rVal,
 				}

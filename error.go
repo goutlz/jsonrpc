@@ -57,8 +57,13 @@ func MakeError(code int, message string, data error) ServerError {
 	}
 }
 
-func MakeModuleErrorCode(module int, errorCode int) int {
+func makeModuleErrorCode(module int, errorCode int) int {
 	return module*module_code_multiplier + errorCode
+}
+
+func MakeModuleError(module int, errorCode int, msg string, data error) ServerError {
+	code := makeModuleErrorCode(module, errorCode)
+	return MakeError(code, msg, data)
 }
 
 func throwError(err ServerError) {
@@ -66,6 +71,6 @@ func throwError(err ServerError) {
 }
 
 func makeErrorAndThrow(code int, message string, data error) {
-	handlerErrorCode := MakeModuleErrorCode(jsonrpc_module_code, code)
+	handlerErrorCode := makeModuleErrorCode(jsonrpc_module_code, code)
 	throwError(MakeError(handlerErrorCode, message, data))
 }
