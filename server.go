@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/goutlz/errz"
+	"github.com/goutlz/servr"
 
 	"github.com/gorilla/mux"
 )
@@ -53,25 +54,5 @@ func NewServer(addr string, handlers map[string]RouteHandler) Server {
 		versionRouter.HandleFunc(fmt.Sprintf("/%s", route), createJsonRpcHandler(handler)).Methods("POST")
 	}
 
-	wrap := &serverWrap{
-		server: &http.Server{
-			Handler: router,
-			Addr:    addr,
-		},
-	}
-
-	go func() {
-		err := wrap.server.ListenAndServe()
-		if err == nil {
-			return
-		}
-
-		if wrap.isStopped() {
-			return
-		}
-
-		panic(errz.Wrap(err, "ListenAndServe failed"))
-	}()
-
-	return wrap
+	return servr.New(addr, router)
 }

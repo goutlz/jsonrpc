@@ -4,3 +4,5 @@ github.com/gorilla/mux v1.7.4 h1:VuZ8uybHlWmqV03+zRzdwKL4tUnIp1MAQtp1mIFE1bc=
 github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/goutlz/errz v1.0.0 h1:dZbDbu5VzLxrsOpxAf+qGRe7YKycZhO8TBwzlFheAI8=
 github.com/goutlz/errz v1.0.0/go.mod h1:QJv4S5dsjhT2XZONyiHVzG3xg60kBV/yIS7VsAQtafU=
+github.com/goutlz/servr v1.0.0 h1:cu5MZ7b35EAUdp3Iu/iQMcsMzP0mkuxfZgig0uvYb80=
+github.com/goutlz/servr v1.0.0/go.mod h1:0UmEg1ayDYgCHm/jAznDLy8TNOCoa0GbgPdN/Gb/QnY=
