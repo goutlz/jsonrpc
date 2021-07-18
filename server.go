@@ -1,58 +1,21 @@
 package jsonrpc
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"sync"
 
-	"github.com/goutlz/errz"
-	"github.com/goutlz/servr"
-
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/goutlz/servr"
 )
 
-type Server interface {
-	Stop() error
-}
-
-type serverWrap struct {
-	lock    sync.RWMutex
-	server  *http.Server
-	stopped bool
-}
-
-func (s *serverWrap) Stop() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-
-	if s.stopped {
-		return errz.New("Server already stopped")
-	}
-
-	s.stopped = true
-
-	err := s.server.Shutdown(context.Background())
-	if err != nil {
-		return errz.Wrap(err, "Failed to stop server")
-	}
-
-	return nil
-}
-
-func (s *serverWrap) isStopped() bool {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	return s.stopped
-}
-
-func NewServer(addr string, handlers map[string]RouteHandler) Server {
+func NewServer(opts *ServerOpts) servr.Server {
 	router := mux.NewRouter()
+	router.Handle("/jsonrpc", createJsonRpcHandler(opts.MethodHandlers)).Methods("POST")
 
-	versionRouter := router.PathPrefix("/api").Subrouter()
-	for route, handler := range handlers {
-		versionRouter.HandleFunc(fmt.Sprintf("/%s", route), createJsonRpcHandler(handler)).Methods("POST")
+	var handler http.Handler = router
+	if opts.Cors.isEnabled() {
+		handler = handlers.CORS(opts.Cors.listHandlersCorsOptions()...)(router)
 	}
 
-	return servr.New(addr, router)
+	return servr.New(opts.Addr, handler)
 }

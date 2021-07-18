@@ -1,76 +1,66 @@
 package jsonrpc
 
 const (
-	module_code_multiplier = 1000
+	ParseErrorCode     = -32700
+	InvalidRequestCode = -32600
+	MethodNotFoundCode = -32601
+	InvalidParamsCode  = -32602
+	InternalErrorCode  = -32603
 
-	jsonrpc_module_code = 0
+	ServerErrorStartCodeValue = -32099
+
+	parseErrorMessage     = "Parse error"
+	invalidRequestMessage = "Invalid Request"
+	methodNotFoundMessage = "Method not found"
+	invalidParamsMessage  = "Invalid params"
+	internalErrorMessage  = "Internal error"
 )
 
-type Error struct {
-	Code    int         `json:"code,omitempty"`
-	Message string      `json:"message,omitempty"`
+var builtInErrs map[int]string
+
+func init() {
+	builtInErrs = map[int]string{
+		ParseErrorCode:     parseErrorMessage,
+		InvalidRequestCode: invalidRequestMessage,
+		MethodNotFoundCode: methodNotFoundMessage,
+		InvalidParamsCode:  invalidParamsMessage,
+		InternalErrorCode:  internalErrorMessage,
+	}
+}
+
+type ServerError struct {
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
-type ServerError interface {
-	GetCode() int
-	GetMessage() string
-	GetData() *string
-	ToError() *Error
-}
-
-type serverErrorImpl struct {
-	code    int
-	message string
-	data    error
-}
-
-func (e *serverErrorImpl) GetCode() int {
-	return e.code
-}
-
-func (e *serverErrorImpl) GetMessage() string {
-	return e.message
-}
-
-func (e *serverErrorImpl) GetData() *string {
-	if e.data == nil {
-		return nil
+func MakeError(code int, message string, data error) *ServerError {
+	err := &ServerError{
+		Code:    code,
+		Message: message,
+		Data:    data,
 	}
-	v := e.data.Error()
-	return &v
-}
 
-func (e *serverErrorImpl) ToError() *Error {
-	return &Error{
-		Code:    e.GetCode(),
-		Message: e.GetMessage(),
-		Data:    e.GetData(),
+	if data != nil {
+		err.Data = data.Error()
 	}
+
+	return err
 }
 
-func MakeError(code int, message string, data error) ServerError {
-	return &serverErrorImpl{
-		code:    code,
-		message: message,
-		data:    data,
+func MakeBuiltInError(code int, data error) *ServerError {
+	msg, ok := builtInErrs[code]
+	if !ok {
+		return MakeError(InternalErrorCode, internalErrorMessage, data)
 	}
-}
 
-func makeModuleErrorCode(module int, errorCode int) int {
-	return module*module_code_multiplier + errorCode
-}
-
-func MakeModuleError(module int, errorCode int, msg string, data error) ServerError {
-	code := makeModuleErrorCode(module, errorCode)
 	return MakeError(code, msg, data)
 }
 
-func throwError(err ServerError) {
+func throwError(err *ServerError) {
 	panic(err)
 }
 
-func makeErrorAndThrow(code int, message string, data error) {
-	handlerErrorCode := makeModuleErrorCode(jsonrpc_module_code, code)
-	throwError(MakeError(handlerErrorCode, message, data))
+func makeErrorAndThrow(code int, data error) {
+	throwError(MakeBuiltInError(code, data))
 }

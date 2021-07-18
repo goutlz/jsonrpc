@@ -1,24 +1,46 @@
 package jsonrpc
 
-import "net/http"
+import (
+	"bytes"
+	"encoding/json"
 
-type RequestBodyBase struct {
-	Version string `json:"jsonrpc"`
-	ID      string `json:"id,omitempty"`
-	Method  string `json:"method"`
+	"github.com/goutlz/errz"
+)
+
+type MethodRequestBase struct {
+	RawID          *rawId `json:"id,omitempty"`
+	JsonRpcVersion string `json:"jsonrpc"`
+	MethodName     string `json:"method"`
 }
 
-type RequestBodyParams struct {
-	Params interface{} `json:"params,omitempty"`
+func (b *MethodRequestBase) ID() string {
+	return b.RawID.StringValue
 }
 
-type RequestBody struct {
-	RequestBodyBase
-	RequestBodyParams
+type MethodRequest struct {
+	MethodRequestBase `json:",inline"`
+	Params            interface{} `json:"params,omitempty"`
 }
 
-type Request struct {
-	Params  interface{}
-	Header  http.Header
-	Cookies []*http.Cookie
+type RequestParams interface {
+	Validate() error
+}
+
+type MethodRequestRaw interface{}
+
+func rawToMethodRequest(raw MethodRequestRaw) *MethodRequest {
+	bytesRawReq, err := json.Marshal(raw)
+	if err != nil {
+		err = errz.Wrap(err, "Failed to marshal raw request")
+		makeErrorAndThrow(InternalErrorCode, err)
+	}
+
+	var req MethodRequest
+	err = json.NewDecoder(bytes.NewReader(bytesRawReq)).Decode(&req)
+	if err != nil {
+		err = errz.Wrapf(err, "Failed to decode params to %T", req)
+		makeErrorAndThrow(InvalidRequestCode, err)
+	}
+
+	return &req
 }
